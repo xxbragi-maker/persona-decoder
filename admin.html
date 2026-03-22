@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Персона Декодер — Админка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f0f1a; color: #e0e0ff; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #7c5cf8, #5a3cd8); padding: 20px 30px; display: flex; align-items: center; gap: 14px; }
+  .header h1 { font-size: 20px; font-weight: 800; color: white; }
+  .header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+  .login { max-width: 400px; margin: 80px auto; background: #1a1a2e; border-radius: 16px; padding: 32px; border: 1px solid rgba(124,92,248,0.2); }
+  .login h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+  input { width: 100%; padding: 12px 14px; background: #0f0f1a; border: 1.5px solid rgba(124,92,248,0.3); border-radius: 10px; color: #e0e0ff; font-size: 14px; margin-bottom: 12px; outline: none; }
+  input:focus { border-color: #7c5cf8; }
+  button { width: 100%; padding: 14px; background: linear-gradient(135deg, #9b7dff, #5a3cd8); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
+  button:hover { opacity: 0.9; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat { background: #1a1a2e; border-radius: 14px; padding: 20px; border: 1px solid rgba(124,92,248,0.15); }
+  .stat-val { font-size: 28px; font-weight: 900; color: #9b7dff; }
+  .stat-lbl { font-size: 12px; color: #8080aa; margin-top: 4px; font-weight: 600; }
+  .section { background: #1a1a2e; border-radius: 14px; padding: 20px; border: 1px solid rgba(124,92,248,0.15); margin-bottom: 20px; }
+  .section h3 { font-size: 15px; font-weight: 800; margin-bottom: 16px; color: #c4b0ff; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; font-weight: 800; color: #6060aa; text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 12px; border-bottom: 1px solid rgba(124,92,248,0.1); }
+  td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid rgba(124,92,248,0.06); }
+  tr:hover td { background: rgba(124,92,248,0.05); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+  .badge.pro { background: rgba(245,184,32,0.15); color: #f5b820; border: 1px solid rgba(245,184,32,0.3); }
+  .badge.free { background: rgba(128,128,180,0.15); color: #8080c0; border: 1px solid rgba(128,128,180,0.2); }
+  .action-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .action-row input { margin-bottom: 0; }
+  .btn-sm { width: auto; padding: 10px 16px; font-size: 13px; }
+  .btn-green { background: linear-gradient(135deg, #34c98a, #1a8050); }
+  .btn-red { background: linear-gradient(135deg, #f55f7a, #c02040); }
+  .msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; margin-top: 10px; display: none; }
+  .msg.ok { background: rgba(52,201,138,0.15); color: #34c98a; border: 1px solid rgba(52,201,138,0.3); }
+  .msg.err { background: rgba(245,95,122,0.15); color: #f55f7a; border: 1px solid rgba(245,95,122,0.3); }
+  .refresh { float: right; font-size: 12px; color: #6060aa; cursor: pointer; }
+  .refresh:hover { color: #9b7dff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="font-size:28px">🧬</div>
+  <div>
+    <h1>Персона Декодер — Админка</h1>
+    <p>Управление пользователями и статистика</p>
+  </div>
+</div>
+
+<div id="login-screen" class="login">
+  <h2>🔐 Вход в админку</h2>
+  <input type="text" id="backend-url" placeholder="URL бэкенда (https://...onrender.com)">
+  <input type="password" id="admin-key" placeholder="Admin Key">
+  <button onclick="doLogin()">Войти</button>
+  <div class="msg" id="login-msg"></div>
+</div>
+
+<div id="dashboard" style="display:none">
+  <div class="container">
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat"><div class="stat-val" id="s-users">—</div><div class="stat-lbl">Всего пользователей</div></div>
+      <div class="stat"><div class="stat-val" id="s-analyses">—</div><div class="stat-lbl">Всего анализов</div></div>
+      <div class="stat"><div class="stat-val" id="s-pro">—</div><div class="stat-lbl">PRO подписчиков</div></div>
+      <div class="stat"><div class="stat-val" id="s-today">—</div><div class="stat-lbl">Анализов сегодня</div></div>
+      <div class="stat"><div class="stat-val" id="s-stars">—</div><div class="stat-lbl">Stars заработано ⭐</div></div>
+    </div>
+
+    <div class="section">
+      <h3>👑 Выдать / Забрать PRO <span class="refresh" onclick="loadStats()">↻ Обновить</span></h3>
+      <div class="action-row">
+        <input type="number" id="grant-id" placeholder="Telegram ID пользователя" style="flex:1">
+        <input type="number" id="grant-days" placeholder="Дней" style="width:80px" value="30">
+        <button class="btn-sm btn-green" onclick="grantPro()">Выдать PRO</button>
+        <button class="btn-sm btn-red" onclick="revokePro()">Забрать</button>
+      </div>
+      <div class="msg" id="grant-msg"></div>
+    </div>
+
+    <div class="section">
+      <h3>👥 Последние пользователи</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Telegram ID</th>
+            <th>Имя</th>
+            <th>Username</th>
+            <th>Статус</th>
+            <th>Анализов</th>
+            <th>PRO до</th>
+            <th>Регистрация</th>
+          </tr>
+        </thead>
+        <tbody id="users-table">
+          <tr><td colspan="7" style="text-align:center;color:#6060aa;padding:20px">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let BACKEND = '';
+let ADMIN_KEY = '';
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+async function doLogin() {
+  BACKEND = document.getElementById('backend-url').value.trim().replace(/\/$/, '');
+  ADMIN_KEY = document.getElementById('admin-key').value.trim();
+  if (!BACKEND || !ADMIN_KEY) return showMsg('login-msg', 'Заполните все поля', 'err');
+
+  try {
+    const res = await fetch(BACKEND + '/admin/stats', {
+      headers: { 'x-admin-key': ADMIN_KEY }
+    });
+    if (!res.ok) return showMsg('login-msg', 'Неверный ключ или URL', 'err');
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadStats();
+    loadUsers();
+    setInterval(() => { loadStats(); loadUsers(); }, 30000);
+  } catch (e) {
+    showMsg('login-msg', 'Не удалось подключиться к серверу', 'err');
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(BACKEND + '/admin/stats', { headers: { 'x-admin-key': ADMIN_KEY } });
+    const d = await res.json();
+    document.getElementById('s-users').textContent = d.total_users?.toLocaleString() || '—';
+    document.getElementById('s-analyses').textContent = d.total_analyses?.toLocaleString() || '—';
+    document.getElementById('s-pro').textContent = d.pro_users?.toLocaleString() || '—';
+    document.getElementById('s-today').textContent = d.analyses_today?.toLocaleString() || '—';
+    document.getElementById('s-stars').textContent = (d.total_stars_earned || 0).toLocaleString() + ' ⭐';
+  } catch (e) { console.error(e); }
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch(BACKEND + '/admin/users', { headers: { 'x-admin-key': ADMIN_KEY } });
+    const d = await res.json();
+    const tbody = document.getElementById('users-table');
+    if (!d.users?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6060aa;padding:20px">Пользователей нет</td></tr>'; return; }
+    tbody.innerHTML = d.users.map(u => `
+      <tr>
+        <td style="font-family:monospace;font-size:12px">${u.telegram_id}</td>
+        <td>${u.first_name || '—'}</td>
+        <td>${u.username ? '@' + u.username : '—'}</td>
+        <td><span class="badge ${u.is_pro ? 'pro' : 'free'}">${u.is_pro ? '👑 PRO' : 'Free'}</span></td>
+        <td>${u.total_analyses || 0}</td>
+        <td style="font-size:12px">${u.pro_expires_at ? new Date(u.pro_expires_at).toLocaleDateString('ru') : '—'}</td>
+        <td style="font-size:12px;color:#6060aa">${new Date(u.created_at).toLocaleDateString('ru')}</td>
+      </tr>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function grantPro() {
+  const tid = document.getElementById('grant-id').value;
+  const days = document.getElementById('grant-days').value || 30;
+  if (!tid) return showMsg('grant-msg', 'Введите Telegram ID', 'err');
+  try {
+    const res = await fetch(BACKEND + '/admin/grant-pro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+      body: JSON.stringify({ telegram_id: parseInt(tid), days: parseInt(days) })
+    });
+    const d = await res.json();
+    if (d.success) { showMsg('grant-msg', d.message, 'ok'); loadUsers(); }
+    else showMsg('grant-msg', d.error, 'err');
+  } catch(e) { showMsg('grant-msg', 'Ошибка', 'err'); }
+}
+
+async function revokePro() {
+  const tid = document.getElementById('grant-id').value;
+  if (!tid) return showMsg('grant-msg', 'Введите Telegram ID', 'err');
+  try {
+    const res = await fetch(BACKEND + '/admin/revoke-pro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+      body: JSON.stringify({ telegram_id: parseInt(tid) })
+    });
+    const d = await res.json();
+    if (d.success) { showMsg('grant-msg', 'PRO отозван', 'ok'); loadUsers(); }
+    else showMsg('grant-msg', d.error, 'err');
+  } catch(e) { showMsg('grant-msg', 'Ошибка', 'err'); }
+}
+</script>
+</body>
+</html>

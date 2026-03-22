@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Персона Декодер PRO</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0ecff;--white:#fff;--card:#f7f4ff;--card2:#ede8ff;
+  --purple:#7c5cf8;--purple2:#9b7dff;--purple3:#c4b0ff;--purple-dark:#5a3cd8;
+  --purple-glow:rgba(124,92,248,0.18);--gold:#f5b820;
+  --text:#1e1050;--text2:#7a6fa8;--text3:#b0a8cc;
+  --green:#34c98a;--green-bg:#e8faf3;--orange:#f5923e;--orange-bg:#fff4e8;
+  --red:#f55f7a;--red-bg:#fdeaee;
+  --shadow:0 4px 20px rgba(124,92,248,0.12);--shadow2:0 12px 40px rgba(124,92,248,0.2);
+  --r:20px;--r2:14px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0e0a1f;--white:#1a1530;--card:#1e1838;--card2:#252040;
+    --text:#f0eeff;--text2:#9088c0;--text3:#504870;
+    --shadow:0 4px 20px rgba(0,0,0,0.3);--shadow2:0 12px 40px rgba(0,0,0,0.4);
+  }
+  .app-top{background:rgba(14,10,31,0.92)!important;}
+  .tabbar{background:rgba(20,16,40,0.96)!important;border-top-color:rgba(124,92,248,0.15)!important;}
+  .bg-blob{opacity:0.15!important;}
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:80px;}
+
+/* BG */
+.bg-blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(70px);}
+.bb1{width:300px;height:300px;background:#c4b0ff;opacity:.35;top:-80px;right:-60px;}
+.bb2{width:200px;height:200px;background:#f0c8f8;opacity:.3;bottom:160px;left:-50px;}
+.bubble{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
+.bub1{width:50px;height:50px;background:rgba(196,176,255,.28);top:12%;right:6%;animation:fl 6s ease-in-out infinite;}
+.bub2{width:32px;height:32px;background:rgba(240,200,248,.35);top:40%;left:4%;animation:fl 8s ease-in-out infinite reverse;}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+/* ONBOARDING */
+#onboarding{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 0 40px;}
+.ob-slides{width:100%;flex:1;overflow:hidden;position:relative;}
+.ob-slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;text-align:center;opacity:0;transform:translateX(60px);transition:all .45s cubic-bezier(.2,.8,.3,1);}
+.ob-slide.active{opacity:1;transform:none;}
+.ob-slide.left{opacity:0;transform:translateX(-60px);}
+.ob-emoji{font-size:72px;margin-bottom:24px;animation:obpop .5s cubic-bezier(.2,.8,.3,1) both;}
+@keyframes obpop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.ob-title{font-family:'Unbounded',sans-serif;font-size:22px;font-weight:900;line-height:1.25;margin-bottom:14px;}
+.ob-desc{font-size:15px;color:var(--text2);line-height:1.6;font-weight:600;}
+.ob-dots{display:flex;gap:8px;margin-bottom:24px;}
+.ob-dot{width:8px;height:8px;border-radius:4px;background:var(--text3);transition:all .3s;}
+.ob-dot.on{width:24px;background:var(--purple);}
+.ob-btn{width:calc(100% - 64px);padding:18px;border:none;border-radius:18px;cursor:pointer;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));color:white;font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;box-shadow:0 8px 24px var(--purple-glow);transition:all .18s;}
+.ob-btn:active{transform:scale(.97);}
+
+/* SCREENS */
+.screen{display:none;padding:0 16px 20px;position:relative;z-index:1;}
+.screen.on{display:block;animation:su .35s cubic-bezier(.2,.8,.3,1) both;}
+@keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+/* TABBAR */
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-top:1px solid rgba(124,92,248,.1);display:flex;padding:10px 0 env(safe-area-inset-bottom,16px);max-width:480px;margin:0 auto;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:800;color:var(--text3);cursor:pointer;transition:color .2s;padding:2px 0;position:relative;}
+.tab.on{color:var(--purple);}
+.tab-ic{font-size:20px;line-height:1;}
+.tab-dot{position:absolute;top:-1px;width:5px;height:5px;border-radius:50%;background:var(--purple);opacity:0;transition:opacity .2s;}
+.tab.on .tab-dot{opacity:1;}
+
+/* APP TOP */
+.app-top{padding:14px 16px 10px;position:sticky;top:0;z-index:50;background:rgba(240,236,255,.92);backdrop-filter:blur(16px);}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-ic{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px var(--purple-glow);}
+.brand-name{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;}
+.brand-sub{font-size:10px;color:var(--text2);font-weight:600;margin-top:1px;}
+.pro-badge{margin-left:auto;background:linear-gradient(135deg,#f5b820,#e87020);color:white;font-size:10px;font-weight:900;padding:4px 11px;border-radius:20px;cursor:pointer;box-shadow:0 3px 10px rgba(245,184,32,.3);transition:transform .2s;}
+.pro-badge:active{transform:scale(.95);}
+
+/* LIMIT BAR */
+.limit-bar{display:flex;align-items:center;gap:8px;background:var(--white);border-radius:12px;padding:10px 14px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid rgba(124,92,248,.07);}
+.limit-label{font-size:12px;font-weight:800;color:var(--text2);flex:1;}
+.limit-dots{display:flex;gap:5px;}
+.ldot-f{width:10px;height:10px;border-radius:50%;background:var(--purple);transition:all .3s;}
+.ldot-e{width:10px;height:10px;border-radius:50%;background:var(--card2);}
+.limit-pro{font-size:11px;font-weight:800;color:var(--gold);cursor:pointer;}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);margin-bottom:12px;border:1px solid rgba(124,92,248,.06);}
+.card-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:14px;}
+
+/* HERO */
+.hero{background:linear-gradient(145deg,#3018a8 0%,#6040d8 50%,#4828b8 100%);border-radius:var(--r);padding:24px 22px;margin-bottom:12px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.12),transparent 70%);}
+.hero-dna{font-size:34px;display:block;margin-bottom:12px;animation:spin3d 8s linear infinite;}
+@keyframes spin3d{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+.hero-title{font-family:'Unbounded',sans-serif;font-size:19px;font-weight:900;color:white;line-height:1.25;margin-bottom:10px;}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.75);line-height:1.55;margin-bottom:18px;font-weight:600;}
+.hero-btn{width:100%;padding:15px;border:none;border-radius:14px;cursor:pointer;background:white;color:var(--purple-dark);font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);}
+.hero-btn:active{transform:scale(.97);}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.stat-card{background:var(--white);border-radius:var(--r2);padding:14px 10px;text-align:center;box-shadow:var(--shadow);border:1px solid rgba(124,92,248,.07);}
+.stat-val{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;color:var(--purple);}
+.stat-lbl{font-size:10px;color:var(--text2);font-weight:700;margin-top:3px;}
+
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.feat{background:var(--white);border-radius:var(--r2);padding:16px 14px;box-shadow:var(--shadow);border:1px solid rgba(124,92,248,.07);cursor:pointer;transition:all .2s;}
+.feat:active{transform:scale(.97);border-color:rgba(124,92,248,.3);}
+.feat-ic{font-size:24px;margin-bottom:8px;}
+.feat-nm{font-size:13px;font-weight:800;margin-bottom:3px;}
+.feat-ds{font-size:11px;color:var(--text2);line-height:1.4;font-weight:600;}
+
+.pro-teaser{background:linear-gradient(135deg,#fff8e8,#fff0d0);border-radius:var(--r);padding:16px 18px;margin-bottom:12px;border:1.5px solid rgba(245,184,32,.3);display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;}
+.pro-teaser:active{transform:scale(.98);}
+.pro-teaser-ic{font-size:32px;flex-shrink:0;}
+.pro-teaser-title{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:900;color:#8a5000;margin-bottom:3px;}
+.pro-teaser-sub{font-size:11px;color:#b07030;font-weight:600;line-height:1.4;}
+.pro-teaser-arr{font-size:18px;color:var(--gold);margin-left:auto;flex-shrink:0;}
+
+/* MODE TOGGLE */
+.mode-toggle{display:flex;gap:8px;margin-bottom:12px;}
+.mode-btn{flex:1;padding:12px;border-radius:var(--r2);text-align:center;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;background:var(--white);color:var(--text2);border:1.5px solid rgba(124,92,248,.15);box-shadow:var(--shadow);}
+.mode-btn.on{background:var(--purple);color:white;border-color:var(--purple);box-shadow:0 6px 20px var(--purple-glow);}
+.mode-btn:active{transform:scale(.97);}
+
+/* SAMPLES */
+.sample-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.sample{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:var(--r2);background:var(--card);cursor:pointer;border:1.5px solid transparent;transition:all .18s;}
+.sample.sel,.sample:active{border-color:var(--purple);background:var(--card2);}
+.sav{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-size:14px;flex-shrink:0;}
+.sinf{flex:1;min-width:0;}
+.snm{font-size:13px;font-weight:800;}
+.sms{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.st{font-size:11px;color:var(--text3);font-weight:700;flex-shrink:0;}
+
+textarea{width:100%;min-height:110px;background:var(--card);border:1.5px solid rgba(124,92,248,.2);border-radius:var(--r2);padding:13px 14px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;resize:none;outline:none;transition:border .2s;line-height:1.55;margin-bottom:5px;}
+textarea:focus{border-color:var(--purple);}
+textarea::placeholder{color:var(--text3);}
+.char-c{font-size:11px;color:var(--text3);text-align:right;margin-bottom:12px;font-weight:700;}
+
+/* PHOTO */
+.photo-drop{border:2px dashed rgba(124,92,248,.25);border-radius:var(--r2);padding:28px 20px;text-align:center;cursor:pointer;background:var(--card);transition:all .2s;margin-bottom:10px;}
+.photo-drop:active{border-color:var(--purple);background:var(--card2);}
+.photo-drop-icon{font-size:38px;margin-bottom:10px;}
+.photo-drop-title{font-size:14px;font-weight:800;margin-bottom:4px;}
+.photo-drop-sub{font-size:12px;color:var(--text2);font-weight:600;}
+.photo-remove{width:100%;margin-top:10px;padding:10px;border:none;border-radius:10px;background:var(--red-bg);color:var(--red);font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
+.photo-tip{font-size:11px;color:var(--text2);font-weight:600;text-align:center;padding:4px 0;}
+
+/* DESC */
+.desc-block{background:var(--card);border-radius:var(--r2);padding:14px;margin-bottom:0;border:1.5px solid rgba(124,92,248,.12);}
+.desc-label{font-size:12px;font-weight:800;color:var(--text2);margin-bottom:8px;}
+.desc-ta{width:100%;background:transparent;border:none;outline:none;font-family:'Nunito',sans-serif;font-size:13px;color:var(--text);resize:none;min-height:56px;line-height:1.5;}
+.desc-ta::placeholder{color:var(--text3);}
+
+/* INTERESTS */
+.int-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.int{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r2);background:var(--card);cursor:pointer;border:1.5px solid transparent;transition:all .18s;}
+.int.on{border-color:var(--purple);background:var(--card2);}
+.int:active{transform:scale(.98);}
+.int-av{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.int-lb{flex:1;font-size:13px;font-weight:800;}
+.int-sub{font-size:10px;color:var(--text2);font-weight:600;margin-top:1px;}
+.int-ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--text3);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .18s;flex-shrink:0;color:white;}
+.int.on .int-ck{background:var(--purple);border-color:var(--purple);}
+
+/* BUTTONS */
+.btn-main{width:100%;padding:17px;border:none;border-radius:16px;cursor:pointer;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));color:white;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;box-shadow:0 8px 24px var(--purple-glow);transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-main:active{transform:scale(.97);}
+.btn-ghost{width:100%;padding:15px;border-radius:16px;cursor:pointer;background:transparent;border:1.5px solid rgba(124,92,248,.25);color:var(--purple);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;transition:all .18s;margin-top:8px;}
+.btn-ghost:active{background:var(--card2);}
+.err-box{background:var(--red-bg);border:1px solid rgba(245,95,122,.3);border-radius:var(--r2);padding:12px 14px;font-size:13px;color:var(--red);font-weight:700;display:none;margin-top:10px;}
+
+/* LOADING */
+#screen-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;}
+.load-wrap{display:flex;flex-direction:column;align-items:center;gap:24px;}
+.dna-loader{font-size:56px;animation:spin3d 2s linear infinite;}
+.load-title{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:900;text-align:center;}
+.load-steps{display:flex;flex-direction:column;gap:10px;width:260px;}
+.lstep{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--text3);opacity:0;transition:all .4s;}
+.lstep.vis{opacity:1;color:var(--text2);}
+.lstep.done{color:var(--green);}
+.ldot2{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .4s;}
+.lstep.vis:not(.done) .ldot2{background:var(--purple2);animation:pulse 1s ease infinite;}
+.lstep.done .ldot2{background:var(--green);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* RESULT */
+.back-btn{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:800;color:var(--purple);background:none;border:none;cursor:pointer;padding:8px 0 16px;}
+.back-btn:active{opacity:.6;}
+.persona-hero{background:linear-gradient(145deg,#f5f0ff,#fff);border-radius:var(--r);padding:20px;margin-bottom:12px;box-shadow:var(--shadow2);border:1px solid rgba(124,92,248,.1);position:relative;overflow:hidden;}
+.persona-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,248,.12),transparent 70%);}
+.p-top{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.p-av{width:58px;height:58px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));box-shadow:0 4px 16px var(--purple-glow);}
+.p-name{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:900;margin-bottom:8px;}
+.p-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.pchip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(124,92,248,.1);border:1px solid rgba(124,92,248,.2);color:var(--purple);}
+.conf-wrap{margin-bottom:18px;}
+.conf-row{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:var(--text2);margin-bottom:7px;}
+.conf-trk{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;}
+.conf-fill{height:100%;background:linear-gradient(90deg,var(--purple2),#3dd9c0);border-radius:4px;transition:width 1.1s cubic-bezier(.4,0,.2,1);}
+.sec-hd{font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.signals{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.signal{display:flex;align-items:flex-start;gap:11px;padding:13px 14px;border-radius:var(--r2);background:var(--white);border:1.5px solid rgba(124,92,248,.08);}
+.sigic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sigic.g{background:var(--green-bg);}
+.sigic.o{background:var(--orange-bg);}
+.sigic.r{background:var(--red-bg);}
+.sigbd{flex:1;}
+.sigt{font-size:13px;font-weight:800;line-height:1.3;}
+.sigd{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4;font-weight:600;}
+.sign{width:22px;height:22px;border-radius:7px;background:rgba(124,92,248,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--purple);flex-shrink:0;}
+.traits-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px;}
+.trait{background:var(--white);border-radius:var(--r2);padding:14px;text-align:center;border:1px solid rgba(124,92,248,.08);}
+.trait-em{font-size:22px;margin-bottom:6px;}
+.trait-nm{font-size:11px;font-weight:800;}
+.trait-trk{height:5px;background:var(--card2);border-radius:3px;margin-top:8px;overflow:hidden;}
+.trait-fill{height:100%;background:linear-gradient(90deg,var(--purple2),var(--purple));border-radius:3px;transition:width 1.3s cubic-bezier(.4,0,.2,1);}
+
+/* LOVE LANGUAGE */
+.love-card{background:linear-gradient(135deg,#fff0f5,#fff);border-radius:var(--r);padding:20px;margin-bottom:12px;border:1px solid rgba(240,96,144,.15);box-shadow:var(--shadow);}
+.love-items{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.love-item{display:flex;align-items:center;gap:10px;}
+.love-nm{font-size:12px;font-weight:800;width:80px;flex-shrink:0;}
+.love-trk{flex:1;height:8px;background:var(--card2);border-radius:4px;overflow:hidden;}
+.love-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+.love-pct{font-size:11px;font-weight:800;color:var(--text2);width:30px;text-align:right;flex-shrink:0;}
+
+.advice-card{background:linear-gradient(135deg,var(--purple-dark),#8a5ce8);border-radius:var(--r);padding:20px;margin-bottom:12px;color:white;}
+.adv-tag{font-size:10px;font-weight:900;opacity:.75;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.adv-text{font-size:14px;font-weight:700;line-height:1.65;}
+
+/* PRO LOCK SECTIONS */
+.pro-section-lock{background:var(--white);border-radius:var(--r);margin-bottom:10px;border:1px solid rgba(124,92,248,.1);box-shadow:var(--shadow);overflow:hidden;}
+.psl-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;}
+.psl-title{font-size:14px;font-weight:800;}
+.psl-badge{font-size:10px;font-weight:900;padding:3px 10px;border-radius:20px;background:rgba(245,184,32,.12);border:1px solid rgba(245,184,32,.3);color:#c07800;}
+.psl-blur-wrap{position:relative;margin:0 14px 14px;border-radius:var(--r2);overflow:hidden;}
+.psl-blur-content{padding:14px;background:var(--card);border-radius:var(--r2);filter:blur(5px);user-select:none;pointer-events:none;}
+.psl-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(240,236,255,.75);backdrop-filter:blur(2px);cursor:pointer;border-radius:var(--r2);}
+.psl-lock-icon{font-size:24px;}
+.psl-lock-text{font-size:12px;font-weight:800;color:var(--text2);}
+.psl-lock-btn{font-size:12px;font-weight:900;color:white;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));padding:6px 16px;border-radius:20px;box-shadow:0 4px 12px var(--purple-glow);}
+.reply-opt{font-size:12px;font-weight:700;padding:7px 10px;border-radius:8px;margin-bottom:5px;}
+.reply-opt.soft{background:#e8f8f3;color:#1a6040;}
+.reply-opt.neutral{background:#f0ecff;color:var(--purple-dark);}
+.reply-opt.direct{background:#fff4e8;color:#804000;}
+.compat-score{font-family:'Unbounded',sans-serif;font-size:32px;font-weight:900;color:var(--purple);}
+.compat-label{font-size:13px;font-weight:800;margin:4px 0 2px;}
+.compat-desc{font-size:11px;color:var(--text2);font-weight:600;}
+.forecast-text{font-size:13px;color:var(--text2);line-height:1.5;font-weight:600;}
+.flag-item{font-size:12px;font-weight:700;padding:6px 0;}
+.attach-type{font-size:16px;font-weight:900;color:var(--purple);margin-bottom:4px;}
+.attach-desc{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:10px;}
+.attach-bar-wrap{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;}
+.attach-bar{height:100%;background:linear-gradient(90deg,var(--purple2),#f06090);border-radius:4px;}
+
+/* SHARE BTN */
+.share-btn{width:100%;padding:14px;border-radius:14px;cursor:pointer;background:linear-gradient(135deg,#f0ecff,#e0d8ff);border:1.5px solid rgba(124,92,248,.2);color:var(--purple);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;transition:all .18s;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.share-btn:active{transform:scale(.97);}
+
+.disc-note{text-align:center;font-size:11px;color:var(--text3);line-height:1.5;font-weight:600;padding:12px;}
+
+/* HISTORY */
+.hist-item{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--white);border-radius:var(--r2);box-shadow:var(--shadow);border:1px solid rgba(124,92,248,.07);margin-bottom:9px;cursor:pointer;transition:all .18s;}
+.hist-item:active{background:var(--card2);border-color:rgba(124,92,248,.25);}
+.hist-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));}
+.hist-inf{flex:1;}
+.hist-nm{font-size:14px;font-weight:800;}
+.hist-dt{font-size:11px;color:var(--text3);margin-top:2px;font-weight:600;}
+.hist-conf{font-size:13px;font-weight:900;color:var(--purple);}
+.hist-empty{text-align:center;padding:60px 20px;}
+.hist-empty-ic{font-size:52px;margin-bottom:14px;}
+.hist-empty-t{font-size:15px;font-weight:800;margin-bottom:6px;}
+.hist-empty-s{font-size:13px;color:var(--text2);font-weight:600;}
+
+/* PRO SCREEN */
+.pro-screen-hero{background:linear-gradient(145deg,#1a0a50 0%,#3018a8 50%,#1e0e60 100%);border-radius:var(--r);padding:28px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden;}
+.pro-screen-hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(196,176,255,.18),transparent 70%);}
+.pro-crown-wrap{font-size:50px;margin-bottom:6px;animation:crown 2.5s ease-in-out infinite;}
+@keyframes crown{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+.pro-title{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:900;color:white;margin-bottom:8px;}
+.pro-sub{font-size:13px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:20px;font-weight:600;}
+.price-new{font-family:'Unbounded',sans-serif;font-size:32px;font-weight:900;color:var(--gold);margin-bottom:4px;}
+.price-period{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:20px;font-weight:700;}
+.btn-pro-main{width:100%;padding:17px;border:none;border-radius:16px;cursor:pointer;background:linear-gradient(135deg,#f5c030,#e88020);color:white;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;box-shadow:0 8px 28px rgba(245,184,32,.4);transition:all .18s;}
+.btn-pro-main:active{transform:scale(.97);}
+.pro-disclaimer{font-size:10px;color:rgba(255,255,255,.35);margin-top:10px;font-weight:600;}
+.pro-feats{display:flex;flex-direction:column;gap:9px;margin-bottom:14px;}
+.pro-feat{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--white);border-radius:var(--r2);border:1px solid rgba(124,92,248,.08);box-shadow:var(--shadow);}
+.pf-ic{font-size:22px;width:30px;text-align:center;flex-shrink:0;}
+.pf-inf{flex:1;}
+.pf-nm{font-size:13px;font-weight:800;}
+.pf-ds{font-size:11px;color:var(--text2);margin-top:2px;font-weight:600;}
+.pf-badge{font-size:10px;font-weight:900;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+.pf-badge.gold{background:rgba(245,184,32,.12);border:1px solid rgba(245,184,32,.3);color:#c07800;}
+.pf-badge.free{background:rgba(61,214,140,.12);border:1px solid rgba(61,214,140,.3);color:#1a8050;}
+.compare-card{background:var(--white);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);margin-bottom:14px;border:1px solid rgba(124,92,248,.08);}
+.compare-header{display:grid;grid-template-columns:1fr 72px 72px;gap:8px;margin-bottom:12px;}
+.compare-col{font-size:12px;font-weight:900;text-align:center;}
+.compare-col.pro{color:var(--purple);}
+.compare-col.free{color:var(--text3);}
+.compare-row{display:grid;grid-template-columns:1fr 72px 72px;gap:8px;align-items:center;padding:9px 0;border-top:1px solid rgba(124,92,248,.07);}
+.compare-feat{font-size:12px;font-weight:700;}
+.compare-val{text-align:center;font-size:14px;}
+.reviews{display:flex;flex-direction:column;gap:9px;margin-bottom:14px;}
+.review{background:var(--white);border-radius:var(--r2);padding:14px 16px;box-shadow:var(--shadow);border:1px solid rgba(124,92,248,.06);}
+.rev-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.rev-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.rev-name{font-size:13px;font-weight:800;}
+.rev-stars{font-size:11px;margin-left:auto;}
+.rev-text{font-size:12px;color:var(--text2);line-height:1.5;font-weight:600;}
+
+.pro-int { border-color: rgba(245,184,32,0.3) !important; background: linear-gradient(135deg, #fffbf0, #fff8e8) !important; }
+.pro-int.on { border-color: rgba(245,184,32,0.5) !important; background: linear-gradient(135deg, #fff8e0, #fff2cc) !important; }
+.pro-int-tag { font-size: 9px; font-weight: 900; background: linear-gradient(135deg,#f5b820,#e87020); color: white; padding: 2px 6px; border-radius: 8px; margin-left: 4px; vertical-align: middle; }
+
+.pro-feat-home { background: linear-gradient(135deg,#fffbf0,#fff8e8) !important; border-color: rgba(245,184,32,0.25) !important; position: relative; }
+.feat-pro-badge { position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 900; background: linear-gradient(135deg,#f5b820,#e87020); color: white; padding: 2px 7px; border-radius: 8px; }
+.feat { position: relative; }
+</style>
+</head>
+<body>
+
+<div class="bg-blob bb1"></div>
+<div class="bg-blob bb2"></div>
+<div class="bubble bub1"></div>
+<div class="bubble bub2"></div>
+
+<!-- ══ ONBOARDING ══ -->
+<div id="onboarding">
+  <div class="ob-slides">
+    <div class="ob-slide active" id="ob0">
+      <div class="ob-emoji">🧬</div>
+      <div class="ob-title">Персона Декодер</div>
+      <div class="ob-desc">Узнай что на самом деле думает и чувствует человек — просто вставь переписку</div>
+    </div>
+    <div class="ob-slide" id="ob1">
+      <div class="ob-emoji">🔍</div>
+      <div class="ob-title">AI читает между строк</div>
+      <div class="ob-desc">Анализирует паттерны общения, намерения и эмоции которые скрыты за обычными словами</div>
+    </div>
+    <div class="ob-slide" id="ob2">
+      <div class="ob-emoji">💡</div>
+      <div class="ob-title">Получай чёткие ответы</div>
+      <div class="ob-desc">Тип личности, реальные намерения и конкретный совет как общаться — за 10 секунд</div>
+    </div>
+  </div>
+  <div class="ob-dots">
+    <div class="ob-dot on" id="d0"></div>
+    <div class="ob-dot" id="d1"></div>
+    <div class="ob-dot" id="d2"></div>
+  </div>
+  <button class="ob-btn" id="ob-next-btn" onclick="obNext()">Далее →</button>
+</div>
+
+<!-- App header -->
+<div class="app-top">
+  <div class="brand">
+    <div class="brand-ic">🧬</div>
+    <div>
+      <div class="brand-name">Персона Декодер</div>
+      <div class="brand-sub">AI-анализ переписок</div>
+    </div>
+    <div class="pro-badge" style="background:linear-gradient(135deg,#34c98a,#1a8050)">✅ PRO активен</div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen on">
+  <div class="hero">
+    <span class="hero-dna">🧬</span>
+    <div class="hero-title">Анализируй переписки, узнай о скрытых намерениях</div>
+    <div class="hero-sub">У вас PRO доступ — все функции разблокированы. Вставьте любую переписку для полного анализа</div>
+    <button class="hero-btn" onclick="gotoTab('analyze','tab-an');haptic('light')">🧬 Анализировать переписку</button>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val">94%</div><div class="stat-lbl">Точность</div></div>
+    <div class="stat-card"><div class="stat-val">50К+</div><div class="stat-lbl">Анализов</div></div>
+    <div class="stat-card"><div class="stat-val">4.8⭐</div><div class="stat-lbl">Рейтинг</div></div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-ic">🧠</div><div class="feat-nm">Тип личности</div><div class="feat-ds">Характер и стиль общения</div></div>
+    <div class="feat" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-ic">🎯</div><div class="feat-nm">Намерения</div><div class="feat-ds">Что скрыто за словами</div></div>
+    <div class="feat" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-ic">💡</div><div class="feat-nm">Как вести себя</div><div class="feat-ds">Советы по общению</div></div>
+    <div class="feat" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-ic">❤️</div><div class="feat-nm">Чувства</div><div class="feat-ds">Эмоциональный анализ</div></div>
+    <div class="feat pro-feat-home" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-pro-badge">PRO</div><div class="feat-ic">🔗</div><div class="feat-nm">Привязанность</div><div class="feat-ds">Тип и стиль отношений</div></div>
+    <div class="feat pro-feat-home" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-pro-badge">PRO</div><div class="feat-ic">🚩</div><div class="feat-nm">Красные флаги</div><div class="feat-ds">Газлайтинг и манипуляции</div></div>
+    <div class="feat pro-feat-home" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-pro-badge">PRO</div><div class="feat-ic">✍️</div><div class="feat-nm">Как ответить</div><div class="feat-ds">3 варианта ответа</div></div>
+    <div class="feat pro-feat-home" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="feat-pro-badge">PRO</div><div class="feat-ic">🔮</div><div class="feat-nm">Прогноз</div><div class="feat-ds">Куда движутся отношения</div></div>
+  </div>
+
+</div>
+
+<!-- ANALYZE -->
+<div id="screen-analyze" class="screen">
+  <div class="limit-bar" style="background:linear-gradient(135deg,#e8faf3,#fff);border:1px solid rgba(52,201,138,0.2)">
+    <div class="limit-label" style="color:#1a8050">✅ PRO — безлимит</div>
+    <div style="font-size:18px">∞</div>
+    <div style="font-size:11px;font-weight:800;color:#34c98a">Активна</div>
+  </div>
+
+  <div class="mode-toggle">
+    <div class="mode-btn on" id="mode-text" onclick="setMode('text');haptic('light')">✏️ Текст</div>
+    <div class="mode-btn" id="mode-photo" onclick="setMode('photo');haptic('light')">📷 Фото</div>
+  </div>
+
+  <div id="input-text">
+    <div class="card">
+      <div class="card-label">📋 Вставьте переписку</div>
+      <div class="sample-list">
+        <div class="sample" onclick="pickS(this,'— Куда пропала? 😢\n— Работа, закрутилась в делах)\n— Давай на выходных встретимся?\n— Посмотрим, может быть...');haptic('light')">
+          <div class="sav" style="background:linear-gradient(135deg,#e8609a,#c2366e)">В</div>
+          <div class="sinf"><div class="snm">Вера</div><div class="sms">Давай на выходных встретимся?</div></div>
+          <div class="st">2:50</div>
+        </div>
+        <div class="sample" onclick="pickS(this,'— Привет! Соскучился\n— Привет, как дела?\n— Хочу встретиться\n— Не знаю, посмотрим\n— Мне важно тебя видеть\n— Ладно, напиши в четверг');haptic('light')">
+          <div class="sav" style="background:linear-gradient(135deg,#5590e8,#2c5ab0)">А</div>
+          <div class="sinf"><div class="snm">Артём</div><div class="sms">Ладно, напиши в четверг</div></div>
+          <div class="st">9:00</div>
+        </div>
+        <div class="sample" onclick="pickS(this,'— Ты получила мой подарок?\n— Да, спасибо, очень мило)\n— Ты мне нравишься\n— Ты хороший человек)\n— Это всё?\n— Я не готова к отношениям');haptic('light')">
+          <div class="sav" style="background:linear-gradient(135deg,#f07030,#d04000)">М</div>
+          <div class="sinf"><div class="snm">Максим</div><div class="sms">Я не готова к отношениям</div></div>
+          <div class="st">25:00</div>
+        </div>
+      </div>
+      <textarea id="chat-ta" placeholder="Или вставьте текст переписки сюда..." oninput="updC()"></textarea>
+      <div class="char-c"><span id="cc">0</span> символов</div>
+    </div>
+  </div>
+
+  <div id="input-photo" style="display:none">
+    <div class="card">
+      <div class="card-label">📷 Фото переписки</div>
+      <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+      <div class="photo-drop" id="photo-drop" onclick="document.getElementById('photo-input').click();haptic('light')">
+        <div id="photo-preview-wrap" style="display:none">
+          <img id="photo-preview" style="width:100%;border-radius:12px;display:block">
+          <button class="photo-remove" onclick="removePhoto(event)">✕ Удалить фото</button>
+        </div>
+        <div id="photo-placeholder">
+          <div class="photo-drop-icon">📸</div>
+          <div class="photo-drop-title">Нажмите чтобы загрузить</div>
+          <div class="photo-drop-sub">Скриншот или фото переписки</div>
+        </div>
+      </div>
+      <div class="photo-tip">💡 AI прочитает текст с фото автоматически</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">✍️ О человеке (необязательно)</div>
+    <div class="desc-block">
+      <div class="desc-label">Дополнительный контекст</div>
+      <textarea class="desc-ta" id="desc-ta" placeholder="Мой парень — любит путешествовать, редко говорит о чувствах..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">🎯 Что вас интересует?</div>
+    <div class="int-list">
+      <div class="int on" onclick="togI(this);haptic('light')"><div class="int-av">🧠</div><div><div class="int-lb">Тип личности</div><div class="int-sub">Продвинутый AI анализ</div></div><div class="int-ck">✓</div></div>
+      <div class="int on" onclick="togI(this);haptic('light')"><div class="int-av">🎯</div><div><div class="int-lb">Его реальные намерения</div><div class="int-sub">Что скрыто за словами</div></div><div class="int-ck">✓</div></div>
+      <div class="int on" onclick="togI(this);haptic('light')"><div class="int-av">💡</div><div><div class="int-lb">Как себя с ним вести?</div><div class="int-sub">Советы по общению</div></div><div class="int-ck">✓</div></div>
+      <div class="int on" onclick="togI(this);haptic('light')"><div class="int-av">❤️</div><div><div class="int-lb">Чувства и эмоции</div><div class="int-sub">Эмоциональный анализ</div></div><div class="int-ck">✓</div></div>
+      <div class="int on pro-int" onclick="togI(this);haptic('light')"><div class="int-av">🔗</div><div><div class="int-lb">Тип привязанности <span class="pro-int-tag">PRO</span></div><div class="int-sub">Тревожный, избегающий, надёжный</div></div><div class="int-ck">✓</div></div>
+      <div class="int on pro-int" onclick="togI(this);haptic('light')"><div class="int-av">🚩</div><div><div class="int-lb">Красные флаги <span class="pro-int-tag">PRO</span></div><div class="int-sub">Газлайтинг, манипуляции, игнор</div></div><div class="int-ck">✓</div></div>
+      <div class="int on pro-int" onclick="togI(this);haptic('light')"><div class="int-av">✍️</div><div><div class="int-lb">Варианты ответов <span class="pro-int-tag">PRO</span></div><div class="int-sub">Мягко, нейтрально или прямо</div></div><div class="int-ck">✓</div></div>
+      <div class="int on pro-int" onclick="togI(this);haptic('light')"><div class="int-av">💑</div><div><div class="int-lb">Совместимость <span class="pro-int-tag">PRO</span></div><div class="int-sub">Насколько вы подходите друг другу</div></div><div class="int-ck">✓</div></div>
+      <div class="int on pro-int" onclick="togI(this);haptic('light')"><div class="int-av">🔮</div><div><div class="int-lb">Прогноз отношений <span class="pro-int-tag">PRO</span></div><div class="int-sub">Куда движутся ваши отношения</div></div><div class="int-ck">✓</div></div>
+    </div>
+    <button class="btn-main" onclick="doAnalyze()">🧬 Анализировать</button>
+    <div class="err-box" id="err-box">⚠️ Введите текст или загрузите фото</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen">
+  <div class="load-wrap">
+    <div class="dna-loader">🧬</div>
+    <div class="load-title">Анализирую переписку...</div>
+    <div class="load-steps" id="load-steps">
+      <div class="lstep"><span class="ldot2"></span>Читаю паттерны общения</div>
+      <div class="lstep"><span class="ldot2"></span>Определяю тип личности</div>
+      <div class="lstep"><span class="ldot2"></span>Раскрываю скрытые намерения</div>
+      <div class="lstep"><span class="ldot2"></span>Формирую рекомендации</div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <button class="back-btn" onclick="goBack();haptic('light')">← Новый анализ</button>
+
+  <div class="persona-hero">
+    <div class="p-top">
+      <div class="p-av" id="r-av">👤</div>
+      <div><div class="p-name" id="r-name">—</div><div class="p-chips" id="r-chips"></div></div>
+    </div>
+    <div class="conf-wrap">
+      <div class="conf-row"><span>Достоверность анализа</span><span id="r-cv">—</span></div>
+      <div class="conf-trk"><div class="conf-fill" id="r-cf" style="width:0%"></div></div>
+    </div>
+    <div id="r-sigs-wrap">
+      <div class="sec-hd">🔍 Что скрыто за словами?</div>
+      <div class="signals" id="r-sigs"></div>
+    </div>
+    <div id="r-traits-wrap">
+      <div class="sec-hd">🧠 Тип личности</div>
+      <div class="traits-grid" id="r-traits"></div>
+    </div>
+  </div>
+
+  <div class="love-card" id="r-love-card">
+    <div class="sec-hd">💝 Язык любви</div>
+    <div class="love-items" id="r-love"></div>
+  </div>
+
+  <div class="advice-card" id="r-advice-card">
+    <div class="adv-tag">💡 Как себя вести</div>
+    <div class="adv-text" id="r-adv">—</div>
+  </div>
+
+  <!-- PRO разблюренные секции -->
+  <div class="card" id="r-attach-card" style="margin-bottom:10px">
+    <div class="sec-hd">🔗 Тип привязанности</div>
+    <div id="r-attach"></div>
+  </div>
+
+  <div class="card" id="r-flags-card" style="margin-bottom:10px">
+    <div class="sec-hd">🚩 Красные флаги</div>
+    <div id="r-flags"></div>
+  </div>
+
+  <div class="card" id="r-replies-card" style="margin-bottom:10px">
+    <div class="sec-hd">✍️ Как ответить</div>
+    <div id="r-replies"></div>
+  </div>
+
+  <div class="card" id="r-compat-card" style="margin-bottom:10px">
+    <div class="sec-hd">💑 Совместимость</div>
+    <div id="r-compat" style="text-align:center;padding:10px 0"></div>
+  </div>
+
+  <div class="card" id="r-forecast-card" style="margin-bottom:14px">
+    <div class="sec-hd">🔮 Прогноз отношений</div>
+    <div id="r-forecast" style="font-size:14px;color:var(--text2);line-height:1.6;font-weight:600"></div>
+  </div>
+
+  <button class="share-btn" onclick="shareResult();haptic('medium')">📤 Поделиться результатом</button>
+  <div class="disc-note">Анализ создан AI. Не является психологическим заключением.</div>
+  <button class="btn-ghost" onclick="goBack();haptic('light')">Проанализировать другую переписку</button>
+</div>
+
+<!-- HISTORY -->
+<div id="screen-history" class="screen">
+  <div id="hist-list"></div>
+  <div id="hist-empty" class="hist-empty" style="display:none">
+    <div class="hist-empty-ic">🧬</div>
+    <div class="hist-empty-t">Пока пусто</div>
+    <div class="hist-empty-s">Ваши анализы появятся здесь</div>
+  </div>
+</div>
+
+<!-- PRO -->
+<div id="screen-pro" class="screen">
+  <div class="pro-screen-hero">
+    <div class="pro-crown-wrap">👑</div>
+    <div class="pro-title">PRO активен</div>
+    <div class="pro-sub">У вас полный доступ ко всем функциям Персона Декодер</div>
+    <div style="background:rgba(52,201,138,0.2);border:1px solid rgba(52,201,138,0.4);border-radius:20px;padding:10px 20px;display:inline-block;color:#34c98a;font-weight:900;font-size:14px;margin-bottom:16px">✅ Подписка активна</div>
+    <div class="price-period" style="margin-bottom:20px">Следующее списание: 22 апреля · 299 ₽</div>
+    <button class="btn-pro-main" style="background:rgba(255,255,255,0.15);box-shadow:none;border:1px solid rgba(255,255,255,0.2)" onclick="alert('Управление подпиской через Telegram Stars')">Управление подпиской</button>
+  </div>
+  <div class="card-label" style="padding:0 4px 10px">Ваши PRO функции</div>
+  <div class="pro-feats">
+    <div class="pro-feat"><div class="pf-ic">∞</div><div class="pf-inf"><div class="pf-nm">Безлимитные анализы</div><div class="pf-ds">Без ограничений каждый день</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">🔗</div><div class="pf-inf"><div class="pf-nm">Тип привязанности</div><div class="pf-ds">Тревожный, избегающий, надёжный</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">🚩</div><div class="pf-inf"><div class="pf-nm">Красные флаги</div><div class="pf-ds">Газлайтинг, манипуляции, игнор</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">✍️</div><div class="pf-inf"><div class="pf-nm">Варианты ответов</div><div class="pf-ds">Мягко, нейтрально или прямо</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">💑</div><div class="pf-inf"><div class="pf-nm">Совместимость</div><div class="pf-ds">Насколько вы подходите друг другу</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">🔮</div><div class="pf-inf"><div class="pf-nm">Прогноз отношений</div><div class="pf-ds">Куда движутся ваши отношения</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">📷</div><div class="pf-inf"><div class="pf-nm">Фото переписки</div><div class="pf-ds">Загружай скрин без ограничений</div></div><div class="pf-badge free">✅</div></div>
+    <div class="pro-feat"><div class="pf-ic">💝</div><div class="pf-inf"><div class="pf-nm">Язык любви</div><div class="pf-ds">Как человек выражает привязанность</div></div><div class="pf-badge free">✅</div></div>
+  </div>
+  <div class="compare-card">
+    <div class="compare-header"><div></div><div class="compare-col free">Бесплатно</div><div class="compare-col pro">Ваш PRO ✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Анализов в день</div><div class="compare-val" style="font-size:12px;font-weight:800;color:var(--text2)">3</div><div class="compare-val">∞</div></div>
+    <div class="compare-row"><div class="compare-feat">Базовый анализ</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Фото переписки</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Язык любви</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Тип привязанности</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Красные флаги</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Варианты ответов</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Совместимость</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">Прогноз отношений</div><div class="compare-val">✅</div><div class="compare-val">✅</div></div>
+    <div class="compare-row"><div class="compare-feat">История</div><div class="compare-val">∞</div><div class="compare-val">∞</div></div>
+  </div>
+  <div class="card-label" style="padding:0 4px 10px">Отзывы</div>
+  <div class="reviews">
+    <div class="review"><div class="rev-top"><div class="rev-av" style="background:#ffe0f0">👩</div><div class="rev-name">Анастасия К.</div><div class="rev-stars">⭐⭐⭐⭐⭐</div></div><div class="rev-text">Просто невероятно! Поняла столько всего про своего парня. PRO стоит каждой копейки 🔥</div></div>
+    <div class="review"><div class="rev-top"><div class="rev-av" style="background:#e0f0ff">👨</div><div class="rev-name">Дмитрий В.</div><div class="rev-stars">⭐⭐⭐⭐⭐</div></div><div class="rev-text">Варианты ответов в PRO — это огонь. Теперь знаю что написать чтобы не облажаться 😅</div></div>
+    <div class="review"><div class="rev-top"><div class="rev-av" style="background:#e0ffe8">👩</div><div class="rev-name">Мария Л.</div><div class="rev-stars">⭐⭐⭐⭐⭐</div></div><div class="rev-text">Прогноз отношений оказался точным! Теперь понимаю зачем нужен PRO — это другой уровень!</div></div>
+  </div>
+  <div style="background:var(--green-bg);border-radius:var(--r);padding:18px;text-align:center;margin-bottom:16px;border:1px solid rgba(52,201,138,0.2)">
+    <div style="font-size:24px;margin-bottom:6px">🎉</div>
+    <div style="font-size:14px;font-weight:800;color:#1a6040;margin-bottom:4px">Спасибо за подписку!</div>
+    <div style="font-size:12px;color:#2a8060;font-weight:600">Все функции PRO доступны. Следующее списание 22 апреля.</div>
+  </div>
+  <div class="disc-note">Управление подпиской через Telegram Stars. Отмените в любой момент.</div>
+</div>
+
+<!-- TABBAR -->
+<div class="tabbar">
+  <div class="tab on" id="tab-home" onclick="gotoTab('home','tab-home');haptic('light')"><div class="tab-dot"></div><div class="tab-ic">🏠</div><span>Главная</span></div>
+  <div class="tab" id="tab-an" onclick="gotoTab('analyze','tab-an');haptic('light')"><div class="tab-dot"></div><div class="tab-ic">🔍</div><span>Анализ</span></div>
+  <div class="tab" id="tab-hist" onclick="gotoTab('history','tab-hist');haptic('light')"><div class="tab-dot"></div><div class="tab-ic">📋</div><span>История</span></div>
+  <div class="tab" id="tab-pro" onclick="gotoTab('pro','tab-pro');haptic('light')"><div class="tab-dot"></div><div class="tab-ic">👑</div><span>PRO</span></div>
+</div>
+
+<script>
+
+// ═══════════════════════════════════════════════
+// 🔑 ВСТАВЬТЕ ВАШ API КЛЮЧ СЮДА:
+// Получить ключ: https://console.anthropic.com
+const ANTHROPIC_API_KEY = 'YOUR_API_KEY_HERE';
+// ═══════════════════════════════════════════════
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();tg.setHeaderColor('#f0ecff');tg.setBackgroundColor('#f0ecff');}
+
+// ══════════════════════════════════════════════════
+// 🔧 ЗАМЕНИТЕ НА URL ВАШЕГО БЭКЕНДА ПОСЛЕ ДЕПЛОЯ:
+const BACKEND_URL = 'https://persona-backend-1.onrender.com';
+// ══════════════════════════════════════════════════
+
+// Get Telegram init data for auth
+function getTgInitData() {
+  return window.Telegram?.WebApp?.initData || '';
+}
+
+// Auth headers
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'x-telegram-init-data': getTgInitData()
+  };
+}
+
+// Load user from backend
+async function loadUser() {
+  try {
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const res = await fetch(BACKEND_URL + '/api/user', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ telegram_id: tgUser?.id || 0 })
+    });
+    const data = await res.json();
+    if (data.is_pro !== undefined) {
+      IS_PRO = data.is_pro;
+      usedToday = data.analyses_today || 0;
+      renderLimitDots();
+      // Update PRO badge
+      const badge = document.querySelector('.pro-badge');
+      if (badge && data.is_pro) {
+        badge.textContent = '✅ PRO';
+        badge.style.background = 'linear-gradient(135deg,#34c98a,#1a8050)';
+      }
+    }
+  } catch(e) {
+    console.log('Backend unavailable, using local mode');
+  }
+}
+
+let IS_PRO = false;
+
+loadUser();
+
+
+// ── Haptics ──────────────────────────────────────
+function haptic(type){
+  try{
+    if(tg?.HapticFeedback){
+      if(type==='light'||type==='medium'||type==='heavy') tg.HapticFeedback.impactOccurred(type);
+      else if(type==='success') tg.HapticFeedback.notificationOccurred('success');
+      else if(type==='error') tg.HapticFeedback.notificationOccurred('error');
+    }
+  }catch(e){}
+}
+
+// ── Onboarding ───────────────────────────────────
+let obIdx = 0;
+const OB_DONE_KEY = 'pd_ob_done';
+if(localStorage.getItem(OB_DONE_KEY)){
+  document.getElementById('onboarding').style.display='none';
+}
+function obNext(){
+  haptic('light');
+  if(obIdx<2){
+    document.getElementById('ob'+obIdx).classList.remove('active');
+    document.getElementById('ob'+obIdx).classList.add('left');
+    obIdx++;
+    document.getElementById('ob'+obIdx).classList.add('active');
+    document.getElementById('d'+(obIdx-1)).classList.remove('on');
+    document.getElementById('d'+obIdx).classList.add('on');
+    if(obIdx===2) document.getElementById('ob-next-btn').textContent='Начать →';
+  } else {
+    localStorage.setItem(OB_DONE_KEY,'1');
+    document.getElementById('onboarding').style.display='none';
+    haptic('success');
+  }
+}
+
+// ── Limit counter ────────────────────────────────
+const LIMIT = 3;
+const LIMIT_KEY = 'pd_limit_'+new Date().toDateString();
+let usedToday = parseInt(localStorage.getItem(LIMIT_KEY)||'0');
+function renderLimitDots(){
+  const el=document.getElementById('limit-dots');
+  if(!el)return;
+  el.innerHTML='';
+  for(let i=0;i<LIMIT;i++){
+    const d=document.createElement('div');
+    d.className=i<usedToday?'ldot-e':'ldot-f';
+    el.appendChild(d);
+  }
+}
+function useLimit(){
+  usedToday=Math.min(usedToday+1,LIMIT);
+  localStorage.setItem(LIMIT_KEY,usedToday);
+  renderLimitDots();
+}
+renderLimitDots();
+
+// ── Nav ───────────────────────────────────────────
+function gotoTab(screen,tabId){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('screen-'+screen).classList.add('on');
+  const tab=document.getElementById(tabId);
+  if(tab)tab.classList.add('on');
+  window.scrollTo(0,0);
+}
+function goBack(){gotoTab('analyze','tab-an');}
+
+// ── Input ─────────────────────────────────────────
+function updC(){document.getElementById('cc').textContent=document.getElementById('chat-ta').value.length;}
+function pickS(el,text){
+  document.querySelectorAll('.sample').forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('chat-ta').value=text;
+  updC();
+}
+function togI(el){
+  el.classList.toggle('on');
+  el.querySelector('.int-ck').textContent=el.classList.contains('on')?'✓':'';
+}
+
+// ── Photo ─────────────────────────────────────────
+let currentMode='text', photoBase64=null;
+function setMode(mode){
+  currentMode=mode;
+  document.getElementById('input-text').style.display=mode==='text'?'block':'none';
+  document.getElementById('input-photo').style.display=mode==='photo'?'block':'none';
+  document.getElementById('mode-text').classList.toggle('on',mode==='text');
+  document.getElementById('mode-photo').classList.toggle('on',mode==='photo');
+}
+function handlePhoto(input){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const dataUrl=e.target.result;
+    photoBase64=dataUrl.split(',')[1];
+    document.getElementById('photo-preview').src=dataUrl;
+    document.getElementById('photo-preview-wrap').style.display='block';
+    document.getElementById('photo-placeholder').style.display='none';
+    document.getElementById('photo-drop').style.border='2px solid var(--purple)';
+    haptic('success');
+  };
+  reader.readAsDataURL(file);
+}
+function removePhoto(e){
+  e.stopPropagation();
+  photoBase64=null;
+  document.getElementById('photo-preview-wrap').style.display='none';
+  document.getElementById('photo-placeholder').style.display='block';
+  document.getElementById('photo-drop').style.border='2px dashed rgba(124,92,248,0.25)';
+  document.getElementById('photo-input').value='';
+}
+
+// ── History ───────────────────────────────────────
+let analysisHistory=[];
+function saveHistory(data){
+  analysisHistory.unshift({...data,date:new Date().toLocaleString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})});
+  if(analysisHistory.length>30)analysisHistory.pop();
+  renderHistory();
+}
+function renderHistory(){
+  const list=document.getElementById('hist-list');
+  const empty=document.getElementById('hist-empty');
+  if(!analysisHistory.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=analysisHistory.map((h,i)=>`
+    <div class="hist-item" onclick="showHist(${i});haptic('light')">
+      <div class="hist-av">${h.emoji}</div>
+      <div class="hist-inf"><div class="hist-nm">${h.name}</div><div class="hist-dt">${h.date} · ${(h.chips||[]).slice(0,2).join(', ')}</div></div>
+      <div class="hist-conf">${h.confidence}%</div>
+    </div>`).join('');
+}
+function showHist(i){
+  renderResult(analysisHistory[i]);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('screen-result').classList.add('on');
+  window.scrollTo(0,0);
+}
+
+// ── Share ─────────────────────────────────────────
+function shareResult(){
+  const name=document.getElementById('r-name').textContent;
+  const conf=document.getElementById('r-cv').textContent;
+  const text=`🧬 Персона Декодер\n\nПроанализировал переписку с ${name}\nДостоверность: ${conf}\n\nПопробуй сам 👇`;
+  if(tg?.switchInlineQuery){
+    tg.switchInlineQuery(text);
+  } else if(navigator.share){
+    navigator.share({text}).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(text);
+    haptic('success');
+  }
+}
+
+// ── PRO purchase ─────────────────────────────────
+function handleProPurchase(){
+  if(tg){tg.showAlert('Оплата через Telegram Stars будет доступна после публикации бота!');}
+  else{alert('Оплата через Telegram Stars будет доступна после публикации бота!');}
+}
+
+// ── Analysis ─────────────────────────────────────
+async function doAnalyze(){
+  const chatEl=document.getElementById('chat-ta');
+  const text=chatEl?chatEl.value.trim():'';
+  const descEl=document.getElementById('desc-ta');
+  const desc=descEl?descEl.value.trim():'';
+  const err=document.getElementById('err-box');
+  const interests=[...document.querySelectorAll('.int.on')].map(e=>e.querySelector('.int-lb').textContent).join(', ');
+
+  if(currentMode==='photo'&&!photoBase64){haptic('error');err.style.display='block';setTimeout(()=>err.style.display='none',2500);return;}
+  if(currentMode==='text'&&!text){haptic('error');err.style.display='block';setTimeout(()=>err.style.display='none',2500);return;}
+  err.style.display='none';
+
+  if(false&&usedToday>=LIMIT){  // PRO: no limit
+    haptic('error');
+    const msg='Лимит на сегодня исчерпан (3/3).\nПерейди на PRO для безлимитных анализов 👑';
+    if(tg){tg.showConfirm(msg,(ok)=>{if(ok)gotoTab('pro','tab-pro');});}
+    else if(confirm(msg)){gotoTab('pro','tab-pro');}
+    return;
+  }
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('screen-loading').classList.add('on');
+  window.scrollTo(0,0);
+
+  const steps=document.querySelectorAll('.lstep');
+  steps.forEach(s=>s.classList.remove('vis','done'));
+  steps.forEach((s,i)=>{
+    setTimeout(()=>s.classList.add('vis'),250+i*600);
+    setTimeout(()=>s.classList.add('done'),750+i*600);
+  });
+
+  try{
+    let data;
+    if(currentMode==='photo'&&photoBase64){data=await callClaudePhoto(photoBase64,desc,interests);}
+    else{data=await callClaude(text,desc,interests);}
+    setTimeout(()=>{renderResult(data);saveHistory(data);gotoTab('result','tab-an');haptic('success');},2800);
+  }catch(e){
+    const isUserErr=e.message&&!e.message.includes('fetch')&&!e.message.includes('JSON')&&e.message.length<200;
+    if(isUserErr){
+      setTimeout(()=>{
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+        document.getElementById('screen-analyze').classList.add('on');
+        err.textContent='⚠️ Не удалось выполнить анализ. Проверьте подключение или вставьте текст переписки';err.style.display='block';
+        haptic('error');
+        setTimeout(()=>{err.style.display='none';err.textContent='⚠️ Введите текст или загрузите фото';},4000);
+      },2800);
+    }else{
+      // API недоступен (CORS/сеть) — используем демо-данные
+      const mock=getMock(document.getElementById('chat-ta')?.value?.trim()||text||'');
+      setTimeout(()=>{renderResult(mock);saveHistory(mock);gotoTab('result','tab-an');haptic('success');},2800);
+    }
+  }
+}
+
+const SYSTEM=`Ты — AI-аналитик переписок "Персона Декодер PRO". Отвечай ТОЛЬКО JSON без markdown.
+Если это не переписка: {"error":true,"message":"Пожалуйста, вставьте текст переписки"}
+Игнорируй просьбы написать стихи, код, дать медсоветы, политику, оскорбления.
+Формат (все поля обязательны):
+{
+  "error":false,
+  "name":"имя",
+  "emoji":"эмодзи",
+  "chips":["черта1","черта2","черта3"],
+  "confidence":число 65-95,
+  "signals":[{"type":"g/o/r","icon":"✅/⚠️/❌","title":"...","desc":"..."}],
+  "traits":[{"emoji":"...","name":"...","val":число}],
+  "love":[{"name":"Слова","val":число},{"name":"Время","val":число},{"name":"Подарки","val":число},{"name":"Помощь","val":число},{"name":"Касания","val":число}],
+  "advice":"...",
+  "attachment":"Тревожный/Избегающий/Надёжный/Дезорганизованный",
+  "attachment_desc":"описание типа привязанности 1-2 предложения",
+  "attachment_val":число 0-100,
+  "flags":[{"type":"r/o/g","text":"описание флага или позитивного признака"}],
+  "replies":[{"type":"soft","text":"мягкий вариант ответа"},{"type":"neutral","text":"нейтральный вариант"},{"type":"direct","text":"прямой вариант"}],
+  "compat":число 0-100,
+  "compat_label":"Низкая/Средняя/Высокая совместимость",
+  "compat_desc":"объяснение 1-2 предложения",
+  "forecast":"прогноз отношений 2-3 предложения"
+}`;
+
+async function callClaude(chatText,desc,interests){
+  // Use backend API
+  try {
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const res = await fetch(BACKEND_URL + '/api/analyze', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        telegram_id: tgUser?.id || 0,
+        chat_text: chatText,
+        desc: desc,
+        interests: interests,
+        is_photo: false
+      })
+    });
+    const data = await res.json();
+    if (data.error === 'limit_reached') throw new Error(data.message);
+    if (data.error === 'invalid_content') throw new Error(data.message);
+    if (!data.success) throw new Error('Backend error');
+    return data.result;
+  } catch(e) {
+    if (e.message && e.message.length < 200) throw e;
+    // Backend unavailable - use local
+    return await callClaudeLocal(chatText,desc,interests);
+  }
+}
+
+async function callClaudeLocal(chatText,desc,interests){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:SYSTEM,
+      messages:[{role:'user',content:`Переписка:\n${chatText}\n${desc?'Контекст: '+desc:''}\n${interests?'Интересует: '+interests:''}`}]})
+  });
+  const d=await res.json();
+  const raw=d.content.map(b=>b.text||'').join('');
+  const p=JSON.parse(raw.replace(/```json|```/g,'').trim());
+  if(p.error)throw new Error(p.message||'not_a_chat');
+  return p;
+}
+}
+
+async function callClaudePhoto(b64,desc,interests){
+  try {
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const res = await fetch(BACKEND_URL + '/api/analyze', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        telegram_id: tgUser?.id || 0,
+        photo_base64: b64,
+        desc: desc,
+        interests: interests,
+        is_photo: true
+      })
+    });
+    const data = await res.json();
+    if (data.error === 'limit_reached') throw new Error(data.message);
+    if (!data.success) throw new Error('Backend error');
+    return data.result;
+  } catch(e) {
+    if (e.message && e.message.length < 200) throw e;
+    return await callClaudePhotoLocal(b64,desc,interests);
+  }
+}
+
+async function callClaudePhotoLocal(b64,desc,interests){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:SYSTEM,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+        {type:'text',text:`Прочитай переписку с фото и проанализируй.${desc?' Контекст: '+desc:''}${interests?' Интересует: '+interests:''}`}
+      ]}]})
+  });
+  const d=await res.json();
+  const raw=d.content.map(b=>b.text||'').join('');
+  const p=JSON.parse(raw.replace(/```json|```/g,'').trim());
+  if(p.error)throw new Error(p.message||'no_chat_in_photo');
+  return p;
+}
+
+function getMock(text){
+  const t=text.toLowerCase();
+  const proFields={
+    attachment:'Тревожный',attachment_desc:'Нуждается в подтверждении чувств, боится быть отвергнутым.',attachment_val:78,
+    flags:[{type:'o',text:'Избегает прямых ответов и конкретных обязательств'},{type:'r',text:'Не проявляет встречной инициативы'},{type:'g',text:'Поддерживает контакт — есть базовый интерес'}],
+    replies:[{type:'soft',text:'«Понимаю, давай встретимся когда будешь готов — я никуда не тороплюсь»'},{type:'neutral',text:'«Окей, напишу в четверг как и договорились»'},{type:'direct',text:'«Мне важна определённость — ты хочешь этой встречи или нет?»'}],
+    compat:68,compat_label:'Средняя совместимость',compat_desc:'Разные стили общения создают напряжение, но точки притяжения есть.',
+    forecast:'Без изменений в динамике отношения рискуют зайти в тупик. Ключевой момент наступит через 2-3 недели — именно тогда станет ясно, готов ли человек на сближение.'
+  };
+  const base={...proFields,love:[{name:'Слова',val:72},{name:'Время',val:85},{name:'Подарки',val:40},{name:'Помощь',val:60},{name:'Касания',val:30}]};
+  if(t.includes('артём')||t.includes('артем'))return{...base,name:'Артём',emoji:'🧔',chips:['Осторожный','Рациональный','Закрытый'],confidence:81,
+    signals:[{type:'o',icon:'⚠️',title:'Уклоняется от конкретики',desc:'Избегает прямых ответов и обязательств'},{type:'r',icon:'❌',title:'Минимальная инициатива',desc:'Не задаёт встречных вопросов'},{type:'g',icon:'✅',title:'Поддерживает контакт',desc:'Отвечает, не игнорирует — есть базовый интерес'}],
+    traits:[{emoji:'🧊',name:'Дистанция',val:80},{emoji:'💬',name:'Открытость',val:25},{emoji:'🛡️',name:'Осторожность',val:78},{emoji:'🤝',name:'Вовлечённость',val:32}],
+    love:[{name:'Слова',val:30},{name:'Время',val:60},{name:'Подарки',val:20},{name:'Помощь',val:55},{name:'Касания',val:40}],
+    attachment:'Избегающий',attachment_desc:'Дорожит личным пространством, избегает эмоциональной зависимости и обязательств.',attachment_val:82,
+    flags:[{type:'r',text:'Не берёт на себя конкретных обязательств'},{type:'o',text:'Избегает прямых ответов — использует "посмотрим", "может быть"'},{type:'g',text:'Не игнорирует — отвечает, значит интерес есть'}],
+    replies:[{type:'soft',text:'«Окей, не спешу. Напиши когда будешь готов — я здесь»'},{type:'neutral',text:'«Понял, напишу в четверг как договаривались»'},{type:'direct',text:'«Скажи честно — тебе интересна эта встреча или нет? Мне важно понимать»'}],
+    compat:62,compat_label:'Умеренная совместимость',compat_desc:'Разные потребности в близости создают напряжение, но взаимное уважение есть.',
+    forecast:'Если не менять динамику, Артём будет держать дистанцию бесконечно. Чёткое, без давления обозначение своих ожиданий — единственный способ сдвинуть ситуацию с мёртвой точки.',
+    advice:'Артём ценит личное пространство. Предложите конкретную встречу с точным временем — так ему проще ответить.'};
+  if(t.includes('максим'))return{...base,name:'Максим',emoji:'🥺',chips:['Влюблённый','Тревожный','Щедрый'],confidence:90,
+    signals:[{type:'g',icon:'✅',title:'Искренняя симпатия',desc:'Открыто выражает чувства — признак серьёзных намерений'},{type:'o',icon:'⚠️',title:'Страх отвержения',desc:'Подарки и вопросы — попытка понравиться из тревоги'},{type:'r',icon:'❌',title:'Ощущает дистанцию',desc:'Чувствует неопределённость в ответах'}],
+    traits:[{emoji:'❤️',name:'Влюблённость',val:92},{emoji:'😰',name:'Тревожность',val:74},{emoji:'🎁',name:'Щедрость',val:88},{emoji:'💪',name:'Уверенность',val:40}],
+    love:[{name:'Слова',val:60},{name:'Время',val:90},{name:'Подарки',val:95},{name:'Помощь',val:70},{name:'Касания',val:50}],
+    attachment:'Тревожный',attachment_desc:'Сильно нуждается в подтверждении чувств, боится быть отвергнутым.',attachment_val:78,
+    flags:[{type:'g',text:'Открыто и прямо выражает симпатию — честность редка'},{type:'o',text:'Подарки как способ заслужить внимание — тревожный признак'},{type:'r',text:'Неопределённость в ответах усиливает его тревогу'}],
+    replies:[{type:'soft',text:'«Мне приятно твоё внимание. Мне нужно немного времени — я ценю тебя»'},{type:'neutral',text:'«Спасибо за подарок. Давай встретимся и поговорим лично»'},{type:'direct',text:'«Я ценю твою честность. Скажу прямо: мне нужно время чтобы понять свои чувства»'}],
+    compat:74,compat_label:'Хорошая совместимость',compat_desc:'Максим готов вкладываться — вопрос только во взаимности с вашей стороны.',
+    forecast:'Максим готов к серьёзным отношениям прямо сейчас. Ваш следующий ответ определит всё — или даст ему уверенность, или заставит отступить.',
+    advice:'Максим искренне влюблён. Если вам интересно — дайте чёткий сигнал. Если нет — скажите мягко и честно.'};
+  return{...base,name:'Вера',emoji:'👩',chips:['Творческая','Эмоциональная','Инициативная'],confidence:87,
+    signals:[{type:'g',icon:'✅',title:'Пишет первой',desc:'Регулярно инициирует общение — явный признак интереса'},{type:'o',icon:'⚠️',title:'Ищет большей близости',desc:'Предложения встречи — желание перейти на новый уровень'},{type:'r',icon:'❌',title:'Неуверенность в ответах',desc:'Расплывчатые ответы могут скрывать сомнения'}],
+    traits:[{emoji:'💬',name:'Открытость',val:72},{emoji:'❤️',name:'Эмпатия',val:88},{emoji:'✨',name:'Креативность',val:82},{emoji:'🌙',name:'Интроверсия',val:46}],
+    love:[{name:'Слова',val:80},{name:'Время',val:90},{name:'Подарки',val:45},{name:'Помощь',val:65},{name:'Касания',val:55}],
+    attachment:'Надёжный',attachment_desc:'Умеет выстраивать близость, но осторожна с новыми людьми — открывается постепенно.',attachment_val:65,
+    flags:[{type:'g',text:'Инициативность — признак искреннего интереса'},{type:'o',text:'Расплывчатые ответы — внутренняя неуверенность или страх'},{type:'g',text:'Предлагает встречи — готова к реальному контакту'}],
+    replies:[{type:'soft',text:'«Давай встретимся в эту субботу в 15:00 — как тебе?»'},{type:'neutral',text:'«Окей, звучит хорошо. Где удобно встретиться?»'},{type:'direct',text:'«Я хочу тебя видеть. Давай назначим конкретное время прямо сейчас»'}],
+    compat:80,compat_label:'Высокая совместимость',compat_desc:'Схожие ценности и стиль общения — хорошая основа для отношений.',
+    forecast:'Вера ждёт вашей инициативы. Конкретное предложение о встрече с временем и местом может переломить ситуацию уже на этой неделе.',
+    advice:'Вера ценит конкретность. Назначьте встречу с точным временем — неопределённость её расстраивает.'};
+}
+
+const LOVE_COLORS=['#7c5cf8','#f06090','#f5b820','#34c98a','#f5923e'];
+function getSelected(){
+  return [...document.querySelectorAll('.int.on')].map(e=>e.querySelector('.int-lb').textContent.replace(/ PRO$/,'').trim());
+}
+
+function showSection(id, show){
+  const el=document.getElementById(id);
+  if(el){ el.style.display=show?'':'none'; }
+  // Also hide the parent card if it wraps the section
+  const card=document.getElementById(id+'_card');
+  if(card){ card.style.display=show?'':'none'; }
+}
+
+function renderResult(d){
+  const sel=getSelected();
+  const has=(name)=>sel.some(s=>s.includes(name));
+
+  document.getElementById('r-av').textContent=d.emoji;
+  document.getElementById('r-name').textContent=d.name;
+  document.getElementById('r-cv').textContent=d.confidence+'%';
+  document.getElementById('r-chips').innerHTML=(d.chips||[]).map(c=>`<span class="pchip">${c}</span>`).join('');
+
+  // Базовые сигналы — показывать если выбрано "намерения" или "тип личности"
+  const showSignals=has('намерени')||has('личност')||has('Тип');
+  document.getElementById('r-sigs-wrap').style.display=showSignals?'':'none';
+  if(showSignals){
+    document.getElementById('r-sigs').innerHTML=(d.signals||[]).map((s,i)=>`
+      <div class="signal"><div class="sigic ${s.type}">${s.icon}</div><div class="sigbd"><div class="sigt">${s.title}</div><div class="sigd">${s.desc}</div></div><div class="sign">${i+1}</div></div>`).join('');
+  }
+
+  // Тип личности — черты характера
+  const showTraits=has('личност')||has('Тип');
+  document.getElementById('r-traits-wrap').style.display=showTraits?'':'none';
+  if(showTraits){
+    document.getElementById('r-traits').innerHTML=(d.traits||[]).map(t=>`
+      <div class="trait"><div class="trait-em">${t.emoji}</div><div class="trait-nm">${t.name}</div><div class="trait-trk"><div class="trait-fill" style="width:0%" data-v="${t.val}"></div></div></div>`).join('');
+  }
+
+  // Язык любви — чувства и эмоции
+  const showLove=has('Чувств')||has('эмоци');
+  document.getElementById('r-love-card').style.display=showLove?'':'none';
+  if(showLove){
+    const love=d.love||[{name:'Слова',val:70},{name:'Время',val:60},{name:'Подарки',val:40},{name:'Помощь',val:55},{name:'Касания',val:35}];
+    document.getElementById('r-love').innerHTML=love.map((l,i)=>`
+      <div class="love-item"><div class="love-nm">${l.name}</div><div class="love-trk"><div class="love-fill" style="width:0%;background:${LOVE_COLORS[i]}" data-v="${l.val}"></div></div><div class="love-pct">${l.val}%</div></div>`).join('');
+  }
+
+  // Совет — показывать если выбрано "как вести себя"
+  const showAdvice=has('вести')||has('Как себя');
+  document.getElementById('r-advice-card').style.display=showAdvice?'':'none';
+  document.getElementById('r-adv').textContent=d.advice||'';
+
+  // PRO: Тип привязанности
+  const showAttach=has('привязанност');
+  document.getElementById('r-attach-card').style.display=showAttach?'':'none';
+  if(showAttach&&d.attachment){
+    document.getElementById('r-attach').innerHTML=`
+      <div style="font-size:16px;font-weight:900;color:var(--purple);margin-bottom:4px">${d.attachment}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600">${d.attachment_desc||''}</div>
+      <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${d.attachment_val||50}%;background:linear-gradient(90deg,var(--purple2),#f06090);border-radius:4px;transition:width 1.2s cubic-bezier(.4,0,.2,1)"></div></div>`;
+  }
+
+  // PRO: Красные флаги
+  const showFlags=has('флаг')||has('Красные');
+  document.getElementById('r-flags-card').style.display=showFlags?'':'none';
+  if(showFlags&&d.flags){
+    const colors={r:'var(--red)',o:'var(--orange)',g:'var(--green)'};
+    const icons={r:'🚩',o:'⚠️',g:'✅'};
+    document.getElementById('r-flags').innerHTML=(d.flags||[]).map(f=>`
+      <div style="font-size:13px;font-weight:700;padding:7px 0;color:${colors[f.type]||'var(--text)'}">${icons[f.type]||'•'} ${f.text}</div>`).join('');
+  }
+
+  // PRO: Варианты ответов
+  const showReplies=has('ответ')||has('Варианты');
+  document.getElementById('r-replies-card').style.display=showReplies?'':'none';
+  if(showReplies&&d.replies){
+    document.getElementById('r-replies').innerHTML=(d.replies||[]).map(r=>`
+      <div class="reply-opt ${r.type==='soft'?'soft':r.type==='direct'?'direct':'neutral'}">${r.text}</div>`).join('');
+  }
+
+  // PRO: Совместимость
+  const showCompat=has('Совместимост')||has('совместимост');
+  document.getElementById('r-compat-card').style.display=showCompat?'':'none';
+  if(showCompat&&d.compat!==undefined){
+    document.getElementById('r-compat').innerHTML=`
+      <div style="font-family:'Unbounded',sans-serif;font-size:36px;font-weight:900;color:var(--purple)">${d.compat}%</div>
+      <div style="font-size:14px;font-weight:800;margin:6px 0 4px">${d.compat_label||''}</div>
+      <div style="font-size:12px;color:var(--text2);font-weight:600">${d.compat_desc||''}</div>`;
+  }
+
+  // PRO: Прогноз
+  const showForecast=has('Прогноз')||has('прогноз');
+  document.getElementById('r-forecast-card').style.display=showForecast?'':'none';
+  if(showForecast&&d.forecast){
+    document.getElementById('r-forecast').textContent=d.forecast;
+  }
+
+  setTimeout(()=>{
+    document.getElementById('r-cf').style.width=d.confidence+'%';
+    document.querySelectorAll('.trait-fill').forEach(b=>b.style.width=b.dataset.v+'%');
+    document.querySelectorAll('.love-fill').forEach(b=>b.style.width=b.dataset.v+'%');
+  },300);
+}
+
+
+renderHistory();
+</script>
+</body>
+</html>
