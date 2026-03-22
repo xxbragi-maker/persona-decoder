@@ -329,31 +329,20 @@ textarea::placeholder{color:var(--text3);}
 <div class="bubble bub1"></div>
 <div class="bubble bub2"></div>
 
+
 <!-- ══ ONBOARDING ══ -->
-<div id="onboarding">
-  <div class="ob-slides">
-    <div class="ob-slide active" id="ob0">
-      <div class="ob-emoji">🧬</div>
-      <div class="ob-title">Персона Декодер</div>
-      <div class="ob-desc">Узнай что на самом деле думает и чувствует человек — просто вставь переписку</div>
-    </div>
-    <div class="ob-slide" id="ob1">
-      <div class="ob-emoji">🔍</div>
-      <div class="ob-title">AI читает между строк</div>
-      <div class="ob-desc">Анализирует паттерны общения, намерения и эмоции которые скрыты за обычными словами</div>
-    </div>
-    <div class="ob-slide" id="ob2">
-      <div class="ob-emoji">💡</div>
-      <div class="ob-title">Получай чёткие ответы</div>
-      <div class="ob-desc">Тип личности, реальные намерения и конкретный совет как общаться — за 10 секунд</div>
-    </div>
+<div id="onboarding" style="position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 60px;">
+  <div id="ob-content" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%">
+    <div id="ob-emoji" style="font-size:72px;margin-bottom:24px">🧬</div>
+    <div id="ob-title" style="font-family:'Unbounded',sans-serif;font-size:22px;font-weight:900;margin-bottom:14px;color:var(--text)">Персона Декодер</div>
+    <div id="ob-desc" style="font-size:15px;color:var(--text2);line-height:1.6;font-weight:600;max-width:300px">Узнай что на самом деле думает и чувствует человек — просто вставь переписку</div>
   </div>
-  <div class="ob-dots">
-    <div class="ob-dot on" id="d0"></div>
-    <div class="ob-dot" id="d1"></div>
-    <div class="ob-dot" id="d2"></div>
+  <div style="display:flex;gap:8px;margin-bottom:28px">
+    <div id="d0" style="width:24px;height:8px;border-radius:4px;background:var(--purple);transition:all .3s"></div>
+    <div id="d1" style="width:8px;height:8px;border-radius:4px;background:var(--text3);transition:all .3s"></div>
+    <div id="d2" style="width:8px;height:8px;border-radius:4px;background:var(--text3);transition:all .3s"></div>
   </div>
-  <button class="ob-btn" id="ob-next-btn" onclick="obNext()">Далее →</button>
+  <button id="ob-btn" onclick="obNext()" style="width:100%;padding:18px;border:none;border-radius:18px;background:linear-gradient(135deg,var(--purple2),var(--purple-dark));color:white;font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px var(--purple-glow)">Далее →</button>
 </div>
 
 <!-- App header -->
@@ -680,6 +669,33 @@ let IS_PRO = false;
 loadUser();
 
 
+
+// ── Onboarding ──
+let _obIdx = 0;
+const _obSlides = [
+  {emoji:'🧬', title:'Персона Декодер', desc:'Узнай что на самом деле думает и чувствует человек — просто вставь переписку'},
+  {emoji:'🔍', title:'AI читает между строк', desc:'Анализирует паттерны общения, намерения и эмоции скрытые за словами'},
+  {emoji:'💡', title:'Получай чёткие ответы', desc:'Тип личности, намерения и совет как общаться — за 10 секунд'},
+];
+
+function obNext(){
+  if(_obIdx < _obSlides.length - 1){
+    _obIdx++;
+    const s = _obSlides[_obIdx];
+    document.getElementById('ob-emoji').textContent = s.emoji;
+    document.getElementById('ob-title').textContent = s.title;
+    document.getElementById('ob-desc').textContent = s.desc;
+    // Update dots
+    ['d0','d1','d2'].forEach((id,i) => {
+      const d = document.getElementById(id);
+      if(d){ d.style.width = i===_obIdx ? '24px' : '8px'; d.style.background = i===_obIdx ? 'var(--purple)' : 'var(--text3)'; }
+    });
+    if(_obIdx === _obSlides.length - 1) document.getElementById('ob-btn').textContent = 'Начать →';
+  } else {
+    document.getElementById('onboarding').style.display = 'none';
+  }
+}
+
 // ── Haptics ──────────────────────────────────────
 function haptic(type){
   try{
@@ -692,32 +708,8 @@ function haptic(type){
 }
 
 // ── Onboarding ───────────────────────────────────
-let obIdx = 0;
-const OB_DONE_KEY = 'pd_ob_done';
-let _obDone = false;
-try { _obDone = localStorage.getItem(OB_DONE_KEY); } catch(e) {}
-if(_obDone){
-  document.getElementById('onboarding').style.display='none';
-}
-function obNext(){
-  try { haptic('light'); } catch(e) {}
-  const slides = document.querySelectorAll('.ob-slide');
-  const dots = document.querySelectorAll('.ob-dot');
-  
-  // Hide current slide
-  slides.forEach(s => { s.classList.remove('active'); s.classList.remove('left'); });
-  dots.forEach(d => d.classList.remove('on'));
-  
-  if(obIdx < 2){
-    obIdx++;
-    slides[obIdx].classList.add('active');
-    dots[obIdx].classList.add('on');
-    if(obIdx === 2) document.getElementById('ob-next-btn').textContent = 'Начать →';
-  } else {
-    try { localStorage.setItem(OB_DONE_KEY,'1'); } catch(e) {}
-    document.getElementById('onboarding').style.display = 'none';
-  }
-}
+
+
 
 // ── Limit counter ────────────────────────────────
 const LIMIT = 3;
@@ -962,7 +954,7 @@ async function callClaudeLocal(chatText,desc,interests){
   if(p.error)throw new Error(p.message||'not_a_chat');
   return p;
 }
-}
+
 
 async function callClaudePhoto(b64,desc,interests){
   try {
