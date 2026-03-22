@@ -879,7 +879,7 @@ async function doAnalyze(){
       setTimeout(()=>{
         document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
         document.getElementById('screen-analyze').classList.add('on');
-        err.textContent='⚠️ Не удалось выполнить анализ. Проверьте подключение или вставьте текст переписки';err.style.display='block';
+        err.textContent='⚠️ '+e.message.slice(0,120);err.style.display='block';
         haptic('error');
         setTimeout(()=>{err.style.display='none';err.textContent='⚠️ Введите текст или загрузите фото';},4000);
       },2800);
@@ -917,8 +917,8 @@ async function callClaude(chatText,desc,interests){
     if (!data.success) throw new Error('Backend error');
     return data.result;
   } catch(e) {
-    if (e.message && e.message.length < 200) throw e;
-    // Backend unavailable - use local
+    console.log('Backend error:', e.message);
+    // Always fall back to local if backend fails
     return await callClaudeLocal(chatText,desc,interests);
   }
 }
@@ -956,7 +956,7 @@ async function callClaudePhoto(b64,desc,interests){
     if (!data.success) throw new Error('Backend error');
     return data.result;
   } catch(e) {
-    if (e.message && e.message.length < 200) throw e;
+    console.log('Backend photo error:', e.message);
     return await callClaudePhotoLocal(b64,desc,interests);
   }
 }
