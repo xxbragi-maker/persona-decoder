@@ -694,7 +694,9 @@ function haptic(type){
 // ── Onboarding ───────────────────────────────────
 let obIdx = 0;
 const OB_DONE_KEY = 'pd_ob_done';
-if(localStorage.getItem(OB_DONE_KEY)){
+let _obDone = false;
+try { _obDone = localStorage.getItem(OB_DONE_KEY); } catch(e) {}
+if(_obDone){
   document.getElementById('onboarding').style.display='none';
 }
 function obNext(){
@@ -708,7 +710,7 @@ function obNext(){
     document.getElementById('d'+obIdx).classList.add('on');
     if(obIdx===2) document.getElementById('ob-next-btn').textContent='Начать →';
   } else {
-    localStorage.setItem(OB_DONE_KEY,'1');
+    try { localStorage.setItem(OB_DONE_KEY,'1'); } catch(e) {}
     document.getElementById('onboarding').style.display='none';
     haptic('success');
   }
