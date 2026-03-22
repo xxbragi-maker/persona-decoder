@@ -700,19 +700,22 @@ if(_obDone){
   document.getElementById('onboarding').style.display='none';
 }
 function obNext(){
-  haptic('light');
-  if(obIdx<2){
-    document.getElementById('ob'+obIdx).classList.remove('active');
-    document.getElementById('ob'+obIdx).classList.add('left');
+  try { haptic('light'); } catch(e) {}
+  const slides = document.querySelectorAll('.ob-slide');
+  const dots = document.querySelectorAll('.ob-dot');
+  
+  // Hide current slide
+  slides.forEach(s => { s.classList.remove('active'); s.classList.remove('left'); });
+  dots.forEach(d => d.classList.remove('on'));
+  
+  if(obIdx < 2){
     obIdx++;
-    document.getElementById('ob'+obIdx).classList.add('active');
-    document.getElementById('d'+(obIdx-1)).classList.remove('on');
-    document.getElementById('d'+obIdx).classList.add('on');
-    if(obIdx===2) document.getElementById('ob-next-btn').textContent='Начать →';
+    slides[obIdx].classList.add('active');
+    dots[obIdx].classList.add('on');
+    if(obIdx === 2) document.getElementById('ob-next-btn').textContent = 'Начать →';
   } else {
     try { localStorage.setItem(OB_DONE_KEY,'1'); } catch(e) {}
-    document.getElementById('onboarding').style.display='none';
-    haptic('success');
+    document.getElementById('onboarding').style.display = 'none';
   }
 }
 
