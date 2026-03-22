@@ -693,7 +693,9 @@ function haptic(type){
 // ── Onboarding ───────────────────────────────────
 let obIdx = 0;
 const OB_DONE_KEY = 'pd_ob_done';
-if(localStorage.getItem(OB_DONE_KEY)){
+let _obDone = false;
+try { _obDone = localStorage.getItem(OB_DONE_KEY); } catch(e) {}
+if(_obDone){
   document.getElementById('onboarding').style.display='none';
 }
 function obNext(){
@@ -707,7 +709,7 @@ function obNext(){
     document.getElementById('d'+obIdx).classList.add('on');
     if(obIdx===2) document.getElementById('ob-next-btn').textContent='Начать →';
   } else {
-    localStorage.setItem(OB_DONE_KEY,'1');
+    try { localStorage.setItem(OB_DONE_KEY,'1'); } catch(e) {}
     document.getElementById('onboarding').style.display='none';
     haptic('success');
   }
@@ -716,7 +718,8 @@ function obNext(){
 // ── Limit counter ────────────────────────────────
 const LIMIT = 3;
 const LIMIT_KEY = 'pd_limit_'+new Date().toDateString();
-let usedToday = parseInt(localStorage.getItem(LIMIT_KEY)||'0');
+let usedToday = 0;
+try { usedToday = parseInt(localStorage.getItem(LIMIT_KEY)||'0'); } catch(e) {}
 function renderLimitDots(){
   const el=document.getElementById('limit-dots');
   if(!el)return;
@@ -729,7 +732,7 @@ function renderLimitDots(){
 }
 function useLimit(){
   usedToday=Math.min(usedToday+1,LIMIT);
-  localStorage.setItem(LIMIT_KEY,usedToday);
+  try { localStorage.setItem(LIMIT_KEY,usedToday); } catch(e) {}
   renderLimitDots();
 }
 renderLimitDots();
